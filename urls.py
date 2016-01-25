@@ -8,6 +8,8 @@ from . import views
 urlpatterns = patterns(
     '',
     url(r'^$', login_required(views.index), name='index'),
-    url(r'^setup/$', login_required(views.setup), name='setup'),
     url(r'^update/$', login_required(views.update), name='update'),
+    url(r'^oauth/$', login_required(views.oauth), name='oauth'),
+    url(r'^auth_return/$', login_required(views.auth_return),
+        name='auth_return'),
 )

@@ -1,10 +1,10 @@
-{% extends 'drchrono_birthday/base.html' %}
+{% extends 'reports/base.html' %}
+
+{% block title %}reports index{% endblock %}
 
 {% block content %}
 
 <h1>reports</h1>
-
-<p>Welcome, {{ name }}.</p>
 
 <p>You are logged in as {{ user }}.</p>
 
@@ -13,6 +13,11 @@
     <h2>Update</h2>
 
     <p>{{ last_updated }}</p>
+
+    <form action="{% url 'reports:oauth' %}" method="post" class="form">
+        {% csrf_token %}
+        <button type="submit" >Connect to drchrono</button>
+    </form>
 
     <form action="{% url 'reports:update' %}" method="post" class="form">
         {% csrf_token %}
