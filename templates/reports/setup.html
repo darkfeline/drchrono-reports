@@ -1,0 +1,16 @@
+{% extends 'drchrono_birthday/base.html' %}
+
+{% block content %}
+
+<h1>New User Setup</h1>
+
+<p>Hello, {{ user }}.</p>
+
+<p>Please set up your account by clicking the button below to import data from drchrono.</p>
+
+<form action="{% url 'drchrono_birthday:update' %}" method="post" class="form">
+    {% csrf_token %}
+    <button type="submit" >Import/update data from drchrono</button>
+</form>
+
+{% endblock %}
