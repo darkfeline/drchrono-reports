@@ -10,8 +10,15 @@
 
 <section>
 
+    <p><a href="{% url 'reports:view_report' %}">View report</a></p>
+
+</section>
+
+<section>
+
     <h2>Update</h2>
 
+    <p>{{ connected }}</p>
     <p>{{ last_updated }}</p>
 
     <form action="{% url 'reports:oauth' %}" method="get" class="form">

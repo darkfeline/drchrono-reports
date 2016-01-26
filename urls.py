@@ -10,6 +10,8 @@ urlpatterns = patterns(
     url(r'^$', login_required(views.index), name='index'),
     url(r'^update/$', login_required(views.update), name='update'),
     url(r'^oauth/$', login_required(views.oauth), name='oauth'),
+    url(r'^view_report/$', login_required(views.view_report),
+        name='view_report'),
     url(r'^auth_return/$', login_required(views.auth_return),
         name='auth_return'),
 )

@@ -31,6 +31,13 @@ class TemplateAdmin(admin.ModelAdmin):
     )
 
 
+class UserTemplateAdmin(admin.ModelAdmin):
+    list_display = (
+        'user',
+        'template',
+    )
+
+
 class FieldAdmin(admin.ModelAdmin):
     list_display = (
         'id',
@@ -39,16 +46,24 @@ class FieldAdmin(admin.ModelAdmin):
     )
 
 
+class AppointmentAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+    )
+
+
 class ValueAdmin(admin.ModelAdmin):
     list_display = (
         'id',
         'field',
-        'value',
+        'appointment',
     )
 
 
 admin.site.register(models.ReportsUser, UserAdmin)
 admin.site.register(models.Doctor, DoctorAdmin)
 admin.site.register(models.Template, TemplateAdmin)
+admin.site.register(models.UserTemplate, UserTemplateAdmin)
 admin.site.register(models.Field, FieldAdmin)
+admin.site.register(models.Appointment, AppointmentAdmin)
 admin.site.register(models.Value, ValueAdmin)

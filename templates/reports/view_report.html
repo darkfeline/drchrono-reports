@@ -1,0 +1,31 @@
+{% extends 'reports/base.html' %}
+
+{% block title %}reports view{% endblock %}
+
+{% block content %}
+
+<h1>reports view</h1>
+
+show filters here
+
+<table>
+    <thead>
+        <tr>
+            <td>Template</td>
+            <td>Field</td>
+            <td>Count</td>
+            <td>Percentage</td>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in data %}
+        <tr>
+          {% for cell in row %}
+            <td>{{ cell }}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

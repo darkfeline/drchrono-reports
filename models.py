@@ -90,10 +90,8 @@ class Field(models.Model):
         return '{}'.format(self.name)
 
 
-class UserField(models.Model):
-    user = models.ForeignKey(ReportsUser)
-    field = models.ForeignKey(Field)
-    unique_together = ('user', 'field')
+class Appointment(models.Model):
+    id = models.IntegerField(primary_key=True)
 
     def __unicode__(self):
         return '{}'.format(self.id)
@@ -102,16 +100,7 @@ class UserField(models.Model):
 class Value(models.Model):
     id = models.IntegerField(primary_key=True)
     field = models.ForeignKey(Field)
-    value = models.TextField()
+    appointment = models.ForeignKey(Appointment)
 
     def __unicode__(self):
         return '{}'.format(self.name)
-
-
-class UserValue(models.Model):
-    user = models.ForeignKey(ReportsUser)
-    value = models.ForeignKey(Value)
-    unique_together = ('user', 'value')
-
-    def __unicode__(self):
-        return '{}'.format(self.id)

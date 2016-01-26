@@ -18,8 +18,7 @@ from .models import Field
 from .models import Value
 from .models import UserDoctor
 from .models import UserTemplate
-from .models import UserField
-from .models import UserValue
+from .models import Appointment
 
 from . import oauthlib
 
@@ -55,11 +54,50 @@ def index(request):
         last_updated_text = last_updated_text.format(user.last_updated)
     else:
         last_updated_text = 'Not updated.'
+    if user.access_token:
+        connected = 'Connected.'
+    else:
+        connected = 'Not connected.'
     context = {
         'user': user.user,
+        'connected': connected,
         'last_updated': last_updated_text,
     }
     return render(request, 'reports/index.html', context)
+
+
+def _generate_data(user):
+    """Generate report data lazily."""
+    # XXX Optimize this with SQL join?
+    # XXX Super inefficient!
+    for usertemplate in UserTemplate.objects.filter(user=user):
+        template = usertemplate.template
+        total = 0
+        for appointment in Appointment.objects.all():
+            template_used = Value.objects.filter(
+                appointment=appointment).exists()
+            if template_used:
+                total += 1
+        for field in Field.objects.filter(template=template):
+            count = 0
+            for appointment in Appointment.objects.all():
+                if Value.objects.filter(field=field,
+                                        appointment=appointment).exists():
+                    count += 1
+            yield (template.name, field.name, '{}/{}'.format(count, total),
+                   '{:.1%}'.format(count / total))
+
+
+def view_report(request):
+    if request.method != 'GET':
+        return HttpResponseNotAllowed(['GET'])
+    user = ReportsUser.objects.get(user=request.user)
+
+    data = _generate_data(user)
+    context = {
+        'data': data,
+    }
+    return render(request, 'reports/view_report.html', context)
 
 
 def _get(model, id):
@@ -125,10 +163,6 @@ def update(request):
                       template=_get(Template, entry['clinical_note_template']),
                       name=entry['name'])
             x.save()
-        for entry in data['results']:
-            x = UserField(user=user,
-                          field=_get(Field, entry['id']))
-            x.save()
         url = data['next']
 
     # Update values.
@@ -136,16 +170,13 @@ def update(request):
     while url:
         data = requests.get(url, headers=headers).json()
         for entry in data['results']:
+            app = Appointment(id=entry['appointment'])
+            app.save()
             x = Value(id=entry['id'],
                       field=_get(Field, entry['clinical_note_field']),
-                      value=entry['value'])
-            x.save()
-        for entry in data['results']:
-            x = UserValue(user=user,
-                          value=_get(Value, entry['id']))
+                      appointment=app)
             x.save()
         url = data['next']
-
 
     user.last_updated = now
     user.save()
