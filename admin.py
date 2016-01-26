@@ -49,6 +49,7 @@ class FieldAdmin(admin.ModelAdmin):
 class AppointmentAdmin(admin.ModelAdmin):
     list_display = (
         'id',
+        'doctor',
     )
 
 

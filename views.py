@@ -21,7 +21,10 @@ from .models import UserDoctor
 from .models import UserTemplate
 from .models import Appointment
 
+from .forms import ReportFilter
+
 from . import oauthlib
+from . import errors
 
 
 class HttpResponseSeeOther(HttpResponseRedirect):
@@ -36,7 +39,7 @@ def _get_oauth_values():
     return {
         'client_id': 'GcFaMT8rcTQW1VWIMPWiKwt5T1APHP2u0mmQleyP',
         'client_secret': 'X368VErNf1dVG2LSrI5zCbATokpvTzg8V2gULhylt8PZrpE7su9hsmOiIiHQgQsG8MeHzK1t1i60fkVKRBv83wP6tgA39ALpPyAk1TV2LwLYcWYvcPBg1iyog4D7ta7f',
-        'scope': 'patients user',
+        'scope': 'patients user calendar',
         'redirect_uri': 'http://localhost:8001/reports/auth_return/',
     }
 
@@ -67,14 +70,34 @@ def index(request):
     return render(request, 'reports/index.html', context)
 
 
-def _generate_data(user):
-    """Generate report data lazily."""
+def _generate_data(user, doctor=None, template=None, fields=None,
+                   start_date=None, end_date=None):
+    """Generate report data lazily.
+
+    Takes the following filter arguments:
+
+    doctor filters by doctor id given as int.  template filters by template id
+    as int.  fields filters by a list of field ids as int.
+
+    """
+
+    # Handle filters.  Do any necessary type conversions, set up queries, and
+    # check permissions.
+    if doctor:
+        doctor = Doctor.objects.get(id=doctor)
+        if not UserDoctor.filter(user=user, doctor=doctor).exists():
+            raise errors.PermissionError()
+        app_q = Appointment.objects.filter(doctor=doctor)
+    else:
+        app_q = Appointment.objects.all()
+
     # XXX Optimize this with SQL join?
     # XXX Super inefficient!
+    # Generate rows of data.
     for usertemplate in UserTemplate.objects.filter(user=user):
         template = usertemplate.template
         total = 0
-        for appointment in Appointment.objects.all():
+        for appointment in app_q:
             template_used = Value.objects.filter(
                 appointment=appointment).exists()
             if template_used:
@@ -97,6 +120,7 @@ def view_report(request):
     data = _generate_data(user)
     context = {
         'data': data,
+        'form': ReportFilter(user),
     }
     return render(request, 'reports/view_report.html', context)
 
@@ -124,6 +148,8 @@ def update(request):
         user.refresh()
 
     headers = user.auth_header()
+
+    # XXX Skip updating existing?
 
     # Update doctors.
     url = oauthlib.url('/api/doctors')
@@ -171,8 +197,15 @@ def update(request):
     while url:
         data = requests.get(url, headers=headers).json()
         for entry in data['results']:
-            app = Appointment(id=entry['appointment'])
+            # Make appointment.
+            app_id = entry['appointment']
+            url = oauthlib.url('/api/appointments/{}'.format(app_id))
+            data2 = requests.get(url, headers=headers).json()
+            doctor = Doctor.objects.get(id=data2['doctor'])
+            app = Appointment(id=app_id, doctor=doctor)
             app.save()
+
+            # Make value.
             x = Value(id=entry['id'],
                       field=_get(Field, entry['clinical_note_field']),
                       appointment=app)

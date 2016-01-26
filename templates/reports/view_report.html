@@ -6,26 +6,37 @@
 
 <h1>reports view</h1>
 
-show filters here
+<section>
+
+  <h2>Filters</h2>
+
+  <form action="{% url 'reports:view_report' %}" method="get" class="form">
+    {% csrf_token %}
+
+    {{ form }}
+
+    <button type="submit">Set filters</button>
+  </form>
+</section>
 
 <table>
-    <thead>
-        <tr>
-            <td>Template</td>
-            <td>Field</td>
-            <td>Count</td>
-            <td>Percentage</td>
-        </tr>
-    </thead>
-    <tbody>
-        {% for row in data %}
-        <tr>
-          {% for cell in row %}
-            <td>{{ cell }}</td>
-            {% endfor %}
-        </tr>
-        {% endfor %}
-    </tbody>
+  <thead>
+    <tr>
+      <td>Template</td>
+      <td>Field</td>
+      <td>Count</td>
+      <td>Percentage</td>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in data %}
+    <tr>
+      {% for cell in row %}
+      <td>{{ cell }}</td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
 </table>
 
 {% endblock %}
