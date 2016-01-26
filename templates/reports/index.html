@@ -14,7 +14,7 @@
 
     <p>{{ last_updated }}</p>
 
-    <form action="{% url 'reports:oauth' %}" method="post" class="form">
+    <form action="{% url 'reports:oauth' %}" method="get" class="form">
         {% csrf_token %}
         <button type="submit" >Connect to drchrono</button>
     </form>

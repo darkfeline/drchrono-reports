@@ -12,15 +12,24 @@ import pytz
 import requests
 
 from .models import ReportsUser
+from .models import Doctor
 from .models import Template
 from .models import Field
 from .models import Value
+from .models import UserDoctor
+from .models import UserTemplate
+from .models import UserField
+from .models import UserValue
 
 from . import oauthlib
 
 
 class HttpResponseSeeOther(HttpResponseRedirect):
     status_code = 303
+
+
+class HttpResponseTemporaryRedirect(HttpResponseRedirect):
+    status_code = 307
 
 
 def _get_oauth_values():
@@ -53,6 +62,11 @@ def index(request):
     return render(request, 'reports/index.html', context)
 
 
+def _get(model, id):
+    """Shortcut for getting by id."""
+    return model.objects.get(id=id)
+
+
 def update(request):
     """Update data from drchrono."""
     if request.method != 'POST':
@@ -60,6 +74,11 @@ def update(request):
 
     user = ReportsUser.objects.get(user=request.user)
     now = datetime.datetime.now(pytz.utc)
+
+    # OAuth not set up.
+    if not user.expires:
+        index_uri = urlresolvers.reverse('reports:oauth')
+        return HttpResponseSeeOther(index_uri)
 
     # Refresh if needed.
     if user.expires - datetime.timedelta(minutes=10) < now:
@@ -71,52 +90,60 @@ def update(request):
     url = oauthlib.url('/api/doctors')
     while url:
         data = requests.get(url, headers=headers).json()
-        Doctor.objects.bulk_create(
-            Doctor(user=user,
-                   id=entry['id'],
-                   first_name=entry['first_name'],
-                   last_name=entry['last_name'])
-            for entry in data['results']
-        )
+        for entry in data['results']:
+            x = Doctor(id=entry['id'],
+                       first_name=entry['first_name'],
+                       last_name=entry['last_name'])
+            x.save()
+        for entry in data['results']:
+            x = UserDoctor(user=user,
+                           doctor=_get(Doctor, entry['id']))
+            x.save()
         url = data['next']
 
     # Update templates.
     url = oauthlib.url('/api/clinical_note_templates')
     while url:
         data = requests.get(url, headers=headers).json()
-        Template.objects.bulk_create(
-            Template(user=user,
-                     id=entry['id'],
-                     doctor=Doctor.objects.get(entry['doctor']),
-                     name=entry['name'])
-            for entry in data['results']
-        )
+        for entry in data['results']:
+            x = Template(id=entry['id'],
+                         doctor=_get(Doctor, entry['doctor']),
+                         name=entry['name'])
+            x.save()
+        for entry in data['results']:
+            x = UserTemplate(user=user,
+                             template=_get(Template, entry['id']))
+            x.save()
         url = data['next']
 
     # Update fields.
     url = oauthlib.url('/api/clinical_note_field_types')
     while url:
         data = requests.get(url, headers=headers).json()
-        Field.objects.bulk_create(
-            Field(user=user,
-                  id=entry['id'],
-                  template=Template.objects.get(entry['clinical_note_template']),
-                  name=entry['name'])
-            for entry in data['results']
-        )
+        for entry in data['results']:
+            x = Field(id=entry['id'],
+                      template=_get(Template, entry['clinical_note_template']),
+                      name=entry['name'])
+            x.save()
+        for entry in data['results']:
+            x = UserField(user=user,
+                          field=_get(Field, entry['id']))
+            x.save()
         url = data['next']
 
     # Update values.
     url = oauthlib.url('/api/clinical_note_field_values')
     while url:
         data = requests.get(url, headers=headers).json()
-        Field.objects.bulk_create(
-            Field(user=user,
-                  id=entry['id'],
-                  field=Field.objects.get(entry['clinical_note_field']),
-                  value=entry['value'])
-            for entry in data['results']
-        )
+        for entry in data['results']:
+            x = Value(id=entry['id'],
+                      field=_get(Field, entry['clinical_note_field']),
+                      value=entry['value'])
+            x.save()
+        for entry in data['results']:
+            x = UserValue(user=user,
+                          value=_get(Value, entry['id']))
+            x.save()
         url = data['next']
 
 
@@ -129,12 +156,12 @@ def update(request):
 
 def oauth(request):
     """Handle requests to use OAuth."""
-    if request.method != 'POST':
-        return HttpResponseNotAllowed(['POST'])
+    if request.method != 'GET':
+        return HttpResponseNotAllowed(['GET'])
     vals = _get_oauth_values()
     auth_uri = oauthlib.make_redirect(vals['redirect_uri'],
-                                   vals['client_id'],
-                                   vals['scope'])
+                                      vals['client_id'],
+                                      vals['scope'])
     return HttpResponseSeeOther(auth_uri)
 
 
@@ -164,7 +191,7 @@ def auth_return(request):
                         datetime.timedelta(seconds=data['expires_in'])
 
     user = ReportsUser(user=request.user, access_token=access_token,
-                refresh_token=refresh_token, expires=expires_timestamp)
+                       refresh_token=refresh_token, expires=expires_timestamp)
     user.save()
 
     index_uri = urlresolvers.reverse('reports:index')

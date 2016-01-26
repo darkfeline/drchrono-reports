@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 from django.db import models
 from django.contrib.auth.models import User
 
-from oauth2client.django_orm import FlowField
+from . import errors
 
 
 class ReportsUser(models.Model):
@@ -20,6 +20,8 @@ class ReportsUser(models.Model):
 
     def refresh(self):
         """Refresh access token."""
+        if not user.refresh_token:
+            raise errors.NoTokenError
         response = requests.post(_OAUTH_URLS['token'], data={
             'refresh_token': user.refresh_token,
             'grant_type': 'refresh_token',
@@ -44,17 +46,24 @@ class ReportsUser(models.Model):
 
 
 class Doctor(models.Model):
-    user = models.ForeignKey(ReportsUser)
     id = models.IntegerField(primary_key=True)
     first_name = models.CharField(max_length=256)
     last_name = models.CharField(max_length=256)
 
     def __unicode__(self):
-        return '{}'.format(self.name)
+        return '{}'.format(' '.join((self.first_name, self.last_name.upper())))
+
+
+class UserDoctor(models.Model):
+    user = models.ForeignKey(ReportsUser)
+    doctor = models.ForeignKey(Doctor)
+    unique_together = ('user', 'doctor')
+
+    def __unicode__(self):
+        return '{}'.format(self.id)
 
 
 class Template(models.Model):
-    user = models.ForeignKey(ReportsUser)
     id = models.IntegerField(primary_key=True)
     doctor = models.ForeignKey(Doctor)
     name = models.CharField(max_length=256)
@@ -63,8 +72,16 @@ class Template(models.Model):
         return '{}'.format(self.name)
 
 
-class Field(models.Model):
+class UserTemplate(models.Model):
     user = models.ForeignKey(ReportsUser)
+    template = models.ForeignKey(Template)
+    unique_together = ('user', 'template')
+
+    def __unicode__(self):
+        return '{}'.format(self.id)
+
+
+class Field(models.Model):
     id = models.IntegerField(primary_key=True)
     template = models.ForeignKey(Template)
     name = models.CharField(max_length=256)
@@ -73,11 +90,28 @@ class Field(models.Model):
         return '{}'.format(self.name)
 
 
-class Value(models.Model):
+class UserField(models.Model):
     user = models.ForeignKey(ReportsUser)
+    field = models.ForeignKey(Field)
+    unique_together = ('user', 'field')
+
+    def __unicode__(self):
+        return '{}'.format(self.id)
+
+
+class Value(models.Model):
     id = models.IntegerField(primary_key=True)
     field = models.ForeignKey(Field)
     value = models.TextField()
 
     def __unicode__(self):
         return '{}'.format(self.name)
+
+
+class UserValue(models.Model):
+    user = models.ForeignKey(ReportsUser)
+    value = models.ForeignKey(Value)
+    unique_together = ('user', 'value')
+
+    def __unicode__(self):
+        return '{}'.format(self.id)
