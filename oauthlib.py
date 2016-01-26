@@ -14,6 +14,7 @@ REVOKE_URL = url('/o/revoke_token/')
 
 
 def make_redirect(redirect_uri, client_id, scope):
+    """Make redirect URI for OAuth."""
     return ''.join((
         AUTH_URL,
         "?redirect_uri={}",

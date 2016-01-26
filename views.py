@@ -45,7 +45,13 @@ def _get_oauth_values():
 
 
 def index(request):
-    """Handle main page."""
+    """Handle index page.
+
+    Create internal user if it doesn't exist.
+
+    Expose UI functions for reporting, oauth, updating.
+
+    """
     if request.method != 'GET':
         return HttpResponseNotAllowed(['GET'])
     try:
@@ -106,8 +112,6 @@ def _generate_data(user, doctor=None, template=None, fields=None,
             field_q = field_q.filter(id__in=fields)
     else:
         template_q = UserTemplate.objects.filter(user=user)
-    if template and fields:
-        field_q = field_q.filter(template=template)
     if start_date:
         app_q = app_q.filter(date__gte=start_date)
     if end_date:
@@ -136,6 +140,11 @@ def _generate_data(user, doctor=None, template=None, fields=None,
 
 
 def view_report(request):
+    """View report.
+
+    Parse GET parameters for filtering and generate data using filtering.
+
+    """
     if request.method != 'GET':
         return HttpResponseNotAllowed(['GET'])
     user = ReportsUser.objects.get(user=request.user)
@@ -255,7 +264,7 @@ def update(request):
 
 
 def oauth(request):
-    """Handle requests to use OAuth."""
+    """Initiate OAuth."""
     if request.method != 'GET':
         return HttpResponseNotAllowed(['GET'])
     vals = _get_oauth_values()

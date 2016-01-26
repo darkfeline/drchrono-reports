@@ -15,23 +15,29 @@ from .models import Appointment
 
 class ReportFilter(forms.Form):
 
+    """Report filtering form."""
+
     def _templates(self):
+        """Generate valid templates for selection."""
         return [('', '')] + [
             (x.template.id, x.template)
             for x in UserTemplate.objects.filter(user=self.user)]
 
     def _doctors(self):
+        """Generate valid doctors for selection."""
         return [('', '')] + [
             (x.doctor.id, x.doctor)
             for x in UserDoctor.objects.filter(user=self.user)]
 
     def _fields(self):
+        """Generate valid fields for selection."""
         filter = Field.objects.filter(template_id=self.template_id)
         return [
             (x.id, x)
             for x in filter.exclude(name='')]
 
     def _years(self):
+        """Generate valid years for selection."""
         doctors = UserDoctor.objects.filter(user=self.user)
         doctors = doctors.values_list('doctor', flat=True)
         filter = Appointment.objects.filter(
