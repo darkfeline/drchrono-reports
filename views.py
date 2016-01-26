@@ -155,9 +155,9 @@ def view_report(request):
     form.is_valid()
 
     filters['fields'] = [int(x) for x in request.GET.getlist('fields')]
-    filters['fields'] = form.cleaned_data['fields']
-    filters['start_date'] = form.cleaned_data['start_date']
-    filters['end_date'] = form.cleaned_data['end_date']
+    filters['fields'] = form.cleaned_data.get('fields')
+    filters['start_date'] = form.cleaned_data.get('start_date')
+    filters['end_date'] = form.cleaned_data.get('end_date')
 
     data = _generate_data(user, **filters)
     context = {
