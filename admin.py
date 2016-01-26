@@ -23,6 +23,13 @@ class DoctorAdmin(admin.ModelAdmin):
     )
 
 
+class UserDoctorAdmin(admin.ModelAdmin):
+    list_display = (
+        'user',
+        'doctor',
+    )
+
+
 class TemplateAdmin(admin.ModelAdmin):
     list_display = (
         'id',
@@ -63,6 +70,7 @@ class ValueAdmin(admin.ModelAdmin):
 
 admin.site.register(models.ReportsUser, UserAdmin)
 admin.site.register(models.Doctor, DoctorAdmin)
+admin.site.register(models.UserDoctor, UserDoctorAdmin)
 admin.site.register(models.Template, TemplateAdmin)
 admin.site.register(models.UserTemplate, UserTemplateAdmin)
 admin.site.register(models.Field, FieldAdmin)

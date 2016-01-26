@@ -156,14 +156,12 @@ def update(request):
     while url:
         data = requests.get(url, headers=headers).json()
         for entry in data['results']:
-            x = Doctor(id=entry['id'],
-                       first_name=entry['first_name'],
-                       last_name=entry['last_name'])
-            x.save()
-        for entry in data['results']:
-            x = UserDoctor(user=user,
-                           doctor=_get(Doctor, entry['id']))
-            x.save()
+            Doctor.objects.update_or_create(
+                id=entry['id'],
+                first_name=entry['first_name'],
+                last_name=entry['last_name'])
+            UserDoctor.objects.get_or_create(
+                user=user, doctor=_get(Doctor, entry['id']))
         url = data['next']
 
     # Update templates.
@@ -171,14 +169,12 @@ def update(request):
     while url:
         data = requests.get(url, headers=headers).json()
         for entry in data['results']:
-            x = Template(id=entry['id'],
-                         doctor=_get(Doctor, entry['doctor']),
-                         name=entry['name'])
-            x.save()
-        for entry in data['results']:
-            x = UserTemplate(user=user,
-                             template=_get(Template, entry['id']))
-            x.save()
+            Template.objects.update_or_create(
+                id=entry['id'],
+                doctor=_get(Doctor, entry['doctor']),
+                name=entry['name'])
+            UserTemplate.objects.get_or_create(
+                user=user, template=_get(Template, entry['id']))
         url = data['next']
 
     # Update fields.
@@ -186,10 +182,10 @@ def update(request):
     while url:
         data = requests.get(url, headers=headers).json()
         for entry in data['results']:
-            x = Field(id=entry['id'],
-                      template=_get(Template, entry['clinical_note_template']),
-                      name=entry['name'])
-            x.save()
+            Field.objects.update_or_create(
+                id=entry['id'],
+                template=_get(Template, entry['clinical_note_template']),
+                name=entry['name'])
         url = data['next']
 
     # Update values.
@@ -202,14 +198,14 @@ def update(request):
             url = oauthlib.url('/api/appointments/{}'.format(app_id))
             data2 = requests.get(url, headers=headers).json()
             doctor = Doctor.objects.get(id=data2['doctor'])
-            app = Appointment(id=app_id, doctor=doctor)
-            app.save()
+            app, created = Appointment.objects.update_or_create(
+                id=app_id, doctor=doctor)
 
             # Make value.
-            x = Value(id=entry['id'],
-                      field=_get(Field, entry['clinical_note_field']),
-                      appointment=app)
-            x.save()
+            Value.objects.update_or_create(
+                id=entry['id'],
+                field=_get(Field, entry['clinical_note_field']),
+                appointment=app)
         url = data['next']
 
     user.last_updated = now

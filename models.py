@@ -57,7 +57,8 @@ class Doctor(models.Model):
 class UserDoctor(models.Model):
     user = models.ForeignKey(ReportsUser)
     doctor = models.ForeignKey(Doctor)
-    unique_together = ('user', 'doctor')
+    class Meta:
+        unique_together = ('user', 'doctor')
 
     def __unicode__(self):
         return '{}'.format(self.id)
@@ -75,7 +76,8 @@ class Template(models.Model):
 class UserTemplate(models.Model):
     user = models.ForeignKey(ReportsUser)
     template = models.ForeignKey(Template)
-    unique_together = ('user', 'template')
+    class Meta:
+        unique_together = ('user', 'template')
 
     def __unicode__(self):
         return '{}'.format(self.id)
