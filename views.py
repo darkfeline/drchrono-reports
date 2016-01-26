@@ -79,7 +79,7 @@ def _generate_data(user):
                 appointment=appointment).exists()
             if template_used:
                 total += 1
-        for field in Field.objects.filter(template=template):
+        for field in Field.objects.filter(template=template).exclude(name=''):
             count = 0
             for appointment in Appointment.objects.all():
                 if Value.objects.filter(field=field,
