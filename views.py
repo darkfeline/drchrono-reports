@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
 
-import urllib
 import datetime
 
 from django.shortcuts import render
@@ -15,19 +14,9 @@ import requests
 from .models import ReportsUser
 from .models import Template
 from .models import Field
-from .models import Values
+from .models import Value
 
-# _OAUTH_URLS = {
-#     'auth': "https://drchrono.com/o/authorize/",
-#     'token': "https://drchrono.com/o/token/",
-#     'revoke': "https://drchrono.com/o/revoke_token/",
-# }
-
-_OAUTH_URLS = {
-    'auth': "http://drchrono.dev/o/authorize/",
-    'token': "http://drchrono.dev/o/token/",
-    'revoke': "http://drchrono.dev/o/revoke_token/",
-}
+from . import oauth
 
 
 class HttpResponseSeeOther(HttpResponseRedirect):
@@ -41,20 +30,6 @@ def _get_oauth_values():
         'scope': 'patients user',
         'redirect_uri': 'http://localhost:8001/reports/auth_return/',
     }
-
-
-def _make_redirect(redirect_uri, client_id, scope):
-    return ''.join((
-        _OAUTH_URLS['auth'],
-        "?redirect_uri={}",
-        "&response_type=code",
-        "&client_id={}",
-        "&scope={}",
-    )).format(
-        urllib.quote_plus(redirect_uri),
-        urllib.quote_plus(client_id),
-        urllib.quote_plus(scope),
-    )
 
 
 def index(request):
@@ -83,6 +58,71 @@ def update(request):
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
 
+    user = ReportsUser.objects.get(user=request.user)
+    now = datetime.datetime.now(pytz.utc)
+
+    # Refresh if needed.
+    if user.expires - datetime.timedelta(minutes=10) < now:
+        user.refresh()
+
+    headers = user.auth_header()
+
+    # Update doctors.
+    url = oauth.url('/api/doctors')
+    while url:
+        data = requests.get(url, headers=headers).json()
+        Doctor.objects.bulk_create(
+            Doctor(user=user,
+                   id=entry['id'],
+                   first_name=entry['first_name'],
+                   last_name=entry['last_name'])
+            for entry in data['results']
+        )
+        url = data['next']
+
+    # Update templates.
+    url = oauth.url('/api/clinical_note_templates')
+    while url:
+        data = requests.get(url, headers=headers).json()
+        Template.objects.bulk_create(
+            Template(user=user,
+                     id=entry['id'],
+                     doctor=Doctor.objects.get(entry['doctor']),
+                     name=entry['name'])
+            for entry in data['results']
+        )
+        url = data['next']
+
+    # Update fields.
+    url = oauth.url('/api/clinical_note_field_types')
+    while url:
+        data = requests.get(url, headers=headers).json()
+        Field.objects.bulk_create(
+            Field(user=user,
+                  id=entry['id'],
+                  template=Template.objects.get(entry['clinical_note_template']),
+                  name=entry['name'])
+            for entry in data['results']
+        )
+        url = data['next']
+
+    # Update values.
+    url = oauth.url('/api/clinical_note_field_values')
+    while url:
+        data = requests.get(url, headers=headers).json()
+        Field.objects.bulk_create(
+            Field(user=user,
+                  id=entry['id'],
+                  field=Field.objects.get(entry['clinical_note_field']),
+                  value=entry['value'])
+            for entry in data['results']
+        )
+        url = data['next']
+
+
+    user.last_updated = now
+    user.save()
+
     index_uri = urlresolvers.reverse('reports:index')
     return HttpResponseSeeOther(index_uri)
 
@@ -108,7 +148,7 @@ def auth_return(request):
 
     vals = _get_oauth_values()
 
-    response = requests.post(_OAUTH_URLS['token'], data={
+    response = requests.post(oauth.TOKEN_URL, data={
         'code': request.GET['code'],
         'grant_type': 'authorization_code',
         'redirect_uri': vals['redirect_uri'],
@@ -118,7 +158,6 @@ def auth_return(request):
     response.raise_for_status()
     data = response.json()
 
-    # Save these in your database associated with the user
     access_token = data['access_token']
     refresh_token = data['refresh_token']
     expires_timestamp = datetime.datetime.now(pytz.utc) + \

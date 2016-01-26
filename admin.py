@@ -39,7 +39,7 @@ class FieldAdmin(admin.ModelAdmin):
     )
 
 
-class ValuesAdmin(admin.ModelAdmin):
+class ValueAdmin(admin.ModelAdmin):
     list_display = (
         'id',
         'field',
@@ -51,4 +51,4 @@ admin.site.register(models.ReportsUser, UserAdmin)
 admin.site.register(models.Doctor, DoctorAdmin)
 admin.site.register(models.Template, TemplateAdmin)
 admin.site.register(models.Field, FieldAdmin)
-admin.site.register(models.Values, ValuesAdmin)
+admin.site.register(models.Value, ValueAdmin)
