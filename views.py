@@ -190,8 +190,10 @@ def auth_return(request):
     expires_timestamp = datetime.datetime.now(pytz.utc) + \
                         datetime.timedelta(seconds=data['expires_in'])
 
-    user = ReportsUser(user=request.user, access_token=access_token,
-                       refresh_token=refresh_token, expires=expires_timestamp)
+    user = ReportsUser.objects.get(user=request.user)
+    user.access_token = access_token
+    user.refresh_token = refresh_token
+    user.expires = expires_timestamp
     user.save()
 
     index_uri = urlresolvers.reverse('reports:index')
