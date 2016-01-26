@@ -57,6 +57,7 @@ class AppointmentAdmin(admin.ModelAdmin):
     list_display = (
         'id',
         'doctor',
+        'date',
     )
 
 

@@ -66,6 +66,7 @@ def index(request):
         'user': user.user,
         'connected': connected,
         'last_updated': last_updated_text,
+        'form': ReportFilter(user),
     }
     return render(request, 'reports/index.html', context)
 
@@ -80,6 +81,8 @@ def _generate_data(user, doctor=None, template=None, fields=None,
     as int.  fields filters by a list of field ids as int.
 
     fields must be used with template.
+
+    start_date and end_date are date objects.
 
     """
 
@@ -103,9 +106,12 @@ def _generate_data(user, doctor=None, template=None, fields=None,
             field_q = field_q.filter(id__in=fields)
     else:
         template_q = UserTemplate.objects.filter(user=user)
-
     if template and fields:
         field_q = field_q.filter(template=template)
+    if start_date:
+        app_q = app_q.filter(date__gte=start_date)
+    if end_date:
+        app_q = app_q.filter(date__lte=end_date)
 
     # XXX Optimize this with SQL join?
     # XXX Super inefficient!
@@ -121,7 +127,7 @@ def _generate_data(user, doctor=None, template=None, fields=None,
                 total += 1
         for field in field_q:
             count = 0
-            for appointment in Appointment.objects.all():
+            for appointment in app_q:
                 if Value.objects.filter(field=field,
                                         appointment=appointment).exists():
                     count += 1
@@ -134,23 +140,29 @@ def view_report(request):
         return HttpResponseNotAllowed(['GET'])
     user = ReportsUser.objects.get(user=request.user)
 
-    # Get arguments and convert types.
+    # Get some arguments arguments and convert types.
     filters = {
         'doctor': request.GET.get('doctor'),
         'template': request.GET.get('template'),
     }
-    # Convert non-empty strings to int.
-    # Convert empty strings to None.
     for key, value in filters.items():
         filters[key] = int(value) if value else None
-    filters['fields'] = [int(x) for x in request.GET.getlist('fields')]
 
+    # Create form for cleaned data.
     template = filters['template']
     template = Template.objects.get(id=template) if template else None
+    form = ReportFilter(user, template, request.GET)
+    form.is_valid()
+
+    filters['fields'] = [int(x) for x in request.GET.getlist('fields')]
+    filters['fields'] = form.cleaned_data['fields']
+    filters['start_date'] = form.cleaned_data['start_date']
+    filters['end_date'] = form.cleaned_data['end_date']
+
     data = _generate_data(user, **filters)
     context = {
         'data': data,
-        'form': ReportFilter(user, template, request.GET),
+        'form': form,
     }
     return render(request, 'reports/view_report.html', context)
 
@@ -222,8 +234,11 @@ def update(request):
             app_id = entry['appointment']
             url = oauthlib.url('/api/appointments/{}'.format(app_id))
             data2 = requests.get(url, headers=headers).json()
+            date = datetime.datetime.strptime(
+                data2['scheduled_time'], "%Y-%m-%dT%H:%M:%S")
             app, created = Appointment.objects.update_or_create(
-                id=app_id, doctor_id=data2['doctor'])
+                id=app_id, doctor_id=data2['doctor'],
+                date=date)
 
             # Make value.
             Value.objects.update_or_create(

@@ -17,31 +17,35 @@
     <!-- Probably not a serious concern. -->
     {% csrf_token %}
     {% endcomment %}
-
     {{ form }}
-
-    <button type="submit">Set filters</button>
+    <button type="submit">Regenerate</button>
   </form>
 </section>
 
-<table>
-  <thead>
-    <tr>
-      <td>Template</td>
-      <td>Field</td>
-      <td>Count</td>
-      <td>Percentage</td>
-    </tr>
-  </thead>
-  <tbody>
-    {% for row in data %}
-    <tr>
-      {% for cell in row %}
-      <td>{{ cell }}</td>
+<section>
+
+  <h2>Data</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <td>Template</td>
+        <td>Field</td>
+        <td>Count</td>
+        <td>Percentage</td>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in data %}
+      <tr>
+        {% for cell in row %}
+        <td>{{ cell }}</td>
+        {% endfor %}
+      </tr>
       {% endfor %}
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+    </tbody>
+  </table>
+
+</section>
 
 {% endblock %}

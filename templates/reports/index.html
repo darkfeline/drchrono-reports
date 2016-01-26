@@ -10,7 +10,18 @@
 
 <section>
 
-    <p><a href="{% url 'reports:view_report' %}">View report</a></p>
+    <h2>View report</h2>
+
+  <form action="{% url 'reports:view_report' %}" method="get" class="form">
+    {% comment %}
+    <!-- This gets in the way of saving queries by GET URI. -->
+    <!-- csrf vulnerability: Cross-site DoS by spamming queries. -->
+    <!-- Probably not a serious concern. -->
+    {% csrf_token %}
+    {% endcomment %}
+    {{ form }}
+    <button type="submit">Generate</button>
+  </form>
 
 </section>
 

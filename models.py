@@ -95,6 +95,7 @@ class Field(models.Model):
 class Appointment(models.Model):
     id = models.IntegerField(primary_key=True)
     doctor = models.ForeignKey(Doctor)
+    date = models.DateField()
 
     def __unicode__(self):
         return '{}'.format(self.id)
