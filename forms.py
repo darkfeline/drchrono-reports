@@ -26,7 +26,7 @@ class ReportFilter(forms.Form):
             for x in UserDoctor.objects.filter(user=self.user)]
 
     def _fields(self):
-        filter = Field.objects.filter(template=self.template)
+        filter = Field.objects.filter(template_id=self.template_id)
         return [
             (x.id, x)
             for x in filter.exclude(name='')]
@@ -41,15 +41,20 @@ class ReportFilter(forms.Form):
         start = filter.aggregate(Min('date'))['date__min']
         return start.year, end.year
 
-    def __init__(self, user, template=None, *args, **kwargs):
+    def __init__(self, user, template_id=None, *args, **kwargs):
+        """Report filtering form.
+
+        user is a ReportsUser object.  template_id is a template id as an int.
+
+        """
         forms.Form.__init__(self, *args, **kwargs)
         self.user = user
-        self.template = template
+        self.template_id = template_id
         self.fields['doctor'] = forms.ChoiceField(
             label='Doctor', choices=self._doctors, required=False)
         self.fields['template'] = forms.ChoiceField(
             label='Template', choices=self._templates, required=False)
-        if self.template:
+        if self.template_id:
             self.fields['fields'] = forms.MultipleChoiceField(
                 label='Fields', choices=self._fields, required=False,
                 widget=forms.CheckboxSelectMultiple)
