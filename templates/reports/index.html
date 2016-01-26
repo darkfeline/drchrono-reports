@@ -1,5 +1,7 @@
 {% extends 'reports/base.html' %}
 
+{% load bootstrap3 %}
+
 {% block title %}reports index{% endblock %}
 
 {% block content %}
@@ -10,7 +12,7 @@
 
 <section>
 
-    <h2>View report</h2>
+  <h2>View report</h2>
 
   <form action="{% url 'reports:view_report' %}" method="get" class="form">
     {% comment %}
@@ -19,29 +21,32 @@
     <!-- Probably not a serious concern. -->
     {% csrf_token %}
     {% endcomment %}
-    {{ form }}
-    <button type="submit">Generate</button>
+    {% bootstrap_form form %}
+    {% buttons submit='Generate' %}
+    {% endbuttons %}
   </form>
 
 </section>
 
 <section>
 
-    <h2>Update</h2>
+  <h2>Update</h2>
 
-    <p>{{ connected }}</p>
+  <p>{{ connected }}</p>
 
-    <form action="{% url 'reports:oauth' %}" method="get" class="form">
-        {% csrf_token %}
-        <button type="submit" >Connect to drchrono</button>
-    </form>
+  <form action="{% url 'reports:oauth' %}" method="get" class="form">
+    {% csrf_token %}
+    {% buttons submit='Connect to drchrono' %}
+    {% endbuttons %}
+  </form>
 
-    <p>{{ last_updated }}</p>
+  <p>{{ last_updated }}</p>
 
-    <form action="{% url 'reports:update' %}" method="post" class="form">
-        {% csrf_token %}
-        <button type="submit" >Import data from drchrono</button>
-    </form>
+  <form action="{% url 'reports:update' %}" method="post" class="form">
+    {% csrf_token %}
+    {% buttons submit='Import data from drchrono' %}
+    {% endbuttons %}
+  </form>
 
 </section>
 

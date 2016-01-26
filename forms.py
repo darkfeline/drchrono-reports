@@ -62,8 +62,7 @@ class ReportFilter(forms.Form):
             label='Template', choices=self._templates, required=False)
         if self.template_id:
             self.fields['fields'] = forms.MultipleChoiceField(
-                label='Fields', choices=self._fields, required=False,
-                widget=forms.CheckboxSelectMultiple)
+                label='Fields', choices=self._fields, required=False)
         start, end = self._years()
         years = [x for x in xrange(start, end + 1)]
         self.fields['start_date'] = forms.DateField(

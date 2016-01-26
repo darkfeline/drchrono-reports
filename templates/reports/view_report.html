@@ -1,5 +1,7 @@
 {% extends 'reports/base.html' %}
 
+{% load bootstrap3 %}
+
 {% block title %}reports view{% endblock %}
 
 {% block content %}
@@ -10,15 +12,16 @@
 
   <h2>Filters</h2>
 
-  <form action="{% url 'reports:view_report' %}" method="get" class="form">
+  <form action="{% url 'reports:view_report' %}" method="get" class="form-horizontal">
     {% comment %}
     <!-- This gets in the way of saving queries by GET URI. -->
     <!-- csrf vulnerability: Cross-site DoS by spamming queries. -->
     <!-- Probably not a serious concern. -->
     {% csrf_token %}
     {% endcomment %}
-    {{ form }}
-    <button type="submit">Regenerate</button>
+    {% bootstrap_form form %}
+    {% buttons submit='Regenerate' reset='Reset' %}
+    {% endbuttons %}
   </form>
 </section>
 
@@ -26,13 +29,13 @@
 
   <h2>Data</h2>
 
-  <table>
+  <table class="table table-condensed">
     <thead>
       <tr>
-        <td>Template</td>
-        <td>Field</td>
-        <td>Count</td>
-        <td>Percentage</td>
+        <th>Template</th>
+        <th>Field</th>
+        <th>Count</th>
+        <th>Percentage</th>
       </tr>
     </thead>
     <tbody>
