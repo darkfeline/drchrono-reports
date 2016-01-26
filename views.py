@@ -16,7 +16,7 @@ from .models import Template
 from .models import Field
 from .models import Value
 
-from . import oauth
+from . import oauthlib
 
 
 class HttpResponseSeeOther(HttpResponseRedirect):
@@ -68,7 +68,7 @@ def update(request):
     headers = user.auth_header()
 
     # Update doctors.
-    url = oauth.url('/api/doctors')
+    url = oauthlib.url('/api/doctors')
     while url:
         data = requests.get(url, headers=headers).json()
         Doctor.objects.bulk_create(
@@ -81,7 +81,7 @@ def update(request):
         url = data['next']
 
     # Update templates.
-    url = oauth.url('/api/clinical_note_templates')
+    url = oauthlib.url('/api/clinical_note_templates')
     while url:
         data = requests.get(url, headers=headers).json()
         Template.objects.bulk_create(
@@ -94,7 +94,7 @@ def update(request):
         url = data['next']
 
     # Update fields.
-    url = oauth.url('/api/clinical_note_field_types')
+    url = oauthlib.url('/api/clinical_note_field_types')
     while url:
         data = requests.get(url, headers=headers).json()
         Field.objects.bulk_create(
@@ -107,7 +107,7 @@ def update(request):
         url = data['next']
 
     # Update values.
-    url = oauth.url('/api/clinical_note_field_values')
+    url = oauthlib.url('/api/clinical_note_field_values')
     while url:
         data = requests.get(url, headers=headers).json()
         Field.objects.bulk_create(
@@ -132,9 +132,9 @@ def oauth(request):
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
     vals = _get_oauth_values()
-    auth_uri = _make_redirect(vals['redirect_uri'],
-                              vals['client_id'],
-                              vals['scope'])
+    auth_uri = oauthlib.make_redirect(vals['redirect_uri'],
+                                   vals['client_id'],
+                                   vals['scope'])
     return HttpResponseSeeOther(auth_uri)
 
 
@@ -148,7 +148,7 @@ def auth_return(request):
 
     vals = _get_oauth_values()
 
-    response = requests.post(oauth.TOKEN_URL, data={
+    response = requests.post(oauthlib.TOKEN_URL, data={
         'code': request.GET['code'],
         'grant_type': 'authorization_code',
         'redirect_uri': vals['redirect_uri'],
