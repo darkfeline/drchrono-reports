@@ -79,37 +79,54 @@ def _generate_data(user, doctor=None, template=None, fields=None,
     doctor filters by doctor id given as int.  template filters by template id
     as int.  fields filters by a list of field ids as int.
 
+    fields must be used with template.
+
     """
 
     # Handle filters.  Do any necessary type conversions, set up queries, and
     # check permissions.
     if doctor:
-        doctor = Doctor.objects.get(id=doctor)
-        if not UserDoctor.filter(user=user, doctor=doctor).exists():
+        if not UserDoctor.objects.filter(user=user, doctor=doctor).exists():
             raise errors.PermissionError()
         app_q = Appointment.objects.filter(doctor=doctor)
     else:
         app_q = Appointment.objects.all()
 
+    field_q = Field.objects.exclude(name='')
+    if template:
+        if not UserTemplate.objects.filter(
+                user=user, template=template).exists():
+            raise errors.PermissionError()
+        template_q = UserTemplate.objects.filter(template=template)
+        field_q = field_q.filter(template=template)
+        if fields:
+            field_q = field_q.filter(id__in=fields)
+    else:
+        template_q = UserTemplate.objects.filter(user=user)
+
+    if template and fields:
+        field_q = field_q.filter(template=template)
+
     # XXX Optimize this with SQL join?
     # XXX Super inefficient!
     # Generate rows of data.
-    for usertemplate in UserTemplate.objects.filter(user=user):
+    for usertemplate in template_q:
         template = usertemplate.template
+        fields = Field.objects.filter(template=template)
         total = 0
         for appointment in app_q:
-            template_used = Value.objects.filter(
-                appointment=appointment).exists()
+            template_used = Value.objects.filter(appointment=appointment)
+            template_used = template_used.filter(field__in=fields).exists()
             if template_used:
                 total += 1
-        for field in Field.objects.filter(template=template).exclude(name=''):
+        for field in field_q:
             count = 0
             for appointment in Appointment.objects.all():
                 if Value.objects.filter(field=field,
                                         appointment=appointment).exists():
                     count += 1
             yield (template.name, field.name, '{}/{}'.format(count, total),
-                   '{:.1%}'.format(count / total))
+                   '{:.1%}'.format(count / total) if total else 'N/A')
 
 
 def view_report(request):
@@ -117,17 +134,25 @@ def view_report(request):
         return HttpResponseNotAllowed(['GET'])
     user = ReportsUser.objects.get(user=request.user)
 
-    data = _generate_data(user)
+    # Get arguments and convert types.
+    filters = {
+        'doctor': request.GET.get('doctor'),
+        'template': request.GET.get('template'),
+    }
+    # Convert non-empty strings to int.
+    # Convert empty strings to None.
+    for key, value in filters.items():
+        filters[key] = int(value) if value else None
+    filters['fields'] = [int(x) for x in request.GET.getlist('fields')]
+
+    template = filters['template']
+    template = Template.objects.get(id=template) if template else None
+    data = _generate_data(user, **filters)
     context = {
         'data': data,
-        'form': ReportFilter(user),
+        'form': ReportFilter(user, template, request.GET),
     }
     return render(request, 'reports/view_report.html', context)
-
-
-def _get(model, id):
-    """Shortcut for getting by id."""
-    return model.objects.get(id=id)
 
 
 def update(request):
@@ -161,7 +186,7 @@ def update(request):
                 first_name=entry['first_name'],
                 last_name=entry['last_name'])
             UserDoctor.objects.get_or_create(
-                user=user, doctor=_get(Doctor, entry['id']))
+                user=user, doctor=entry['id'])
         url = data['next']
 
     # Update templates.
@@ -171,10 +196,10 @@ def update(request):
         for entry in data['results']:
             Template.objects.update_or_create(
                 id=entry['id'],
-                doctor=_get(Doctor, entry['doctor']),
+                doctor=entry['doctor'],
                 name=entry['name'])
             UserTemplate.objects.get_or_create(
-                user=user, template=_get(Template, entry['id']))
+                user=user, template=entry['id'])
         url = data['next']
 
     # Update fields.
@@ -184,7 +209,7 @@ def update(request):
         for entry in data['results']:
             Field.objects.update_or_create(
                 id=entry['id'],
-                template=_get(Template, entry['clinical_note_template']),
+                template=entry['clinical_note_template'],
                 name=entry['name'])
         url = data['next']
 
@@ -197,14 +222,13 @@ def update(request):
             app_id = entry['appointment']
             url = oauthlib.url('/api/appointments/{}'.format(app_id))
             data2 = requests.get(url, headers=headers).json()
-            doctor = Doctor.objects.get(id=data2['doctor'])
             app, created = Appointment.objects.update_or_create(
-                id=app_id, doctor=doctor)
+                id=app_id, doctor=data2['doctor'])
 
             # Make value.
             Value.objects.update_or_create(
                 id=entry['id'],
-                field=_get(Field, entry['clinical_note_field']),
+                field=_entry['clinical_note_field'],
                 appointment=app)
         url = data['next']
 
