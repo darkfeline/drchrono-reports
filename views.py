@@ -186,7 +186,7 @@ def update(request):
                 first_name=entry['first_name'],
                 last_name=entry['last_name'])
             UserDoctor.objects.get_or_create(
-                user=user, doctor=entry['id'])
+                user=user, doctor_id=entry['id'])
         url = data['next']
 
     # Update templates.
@@ -196,10 +196,10 @@ def update(request):
         for entry in data['results']:
             Template.objects.update_or_create(
                 id=entry['id'],
-                doctor=entry['doctor'],
+                doctor_id=entry['doctor'],
                 name=entry['name'])
             UserTemplate.objects.get_or_create(
-                user=user, template=entry['id'])
+                user=user, template_id=entry['id'])
         url = data['next']
 
     # Update fields.
@@ -209,7 +209,7 @@ def update(request):
         for entry in data['results']:
             Field.objects.update_or_create(
                 id=entry['id'],
-                template=entry['clinical_note_template'],
+                template_id=entry['clinical_note_template'],
                 name=entry['name'])
         url = data['next']
 
@@ -223,12 +223,12 @@ def update(request):
             url = oauthlib.url('/api/appointments/{}'.format(app_id))
             data2 = requests.get(url, headers=headers).json()
             app, created = Appointment.objects.update_or_create(
-                id=app_id, doctor=data2['doctor'])
+                id=app_id, doctor_id=data2['doctor'])
 
             # Make value.
             Value.objects.update_or_create(
                 id=entry['id'],
-                field=_entry['clinical_note_field'],
+                field_id=entry['clinical_note_field'],
                 appointment=app)
         url = data['next']
 
