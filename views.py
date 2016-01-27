@@ -78,7 +78,8 @@ def index(request):
 
 
 def _generate_data(user, doctor=None, template=None, fields=None,
-                   start_date=None, end_date=None):
+                   start_date=None, end_date=None,
+                   archived=None):
     """Generate report data lazily.
 
     Takes the following filter arguments:
@@ -90,28 +91,30 @@ def _generate_data(user, doctor=None, template=None, fields=None,
 
     start_date and end_date are date objects.
 
+    archived is a bool.
+
     """
 
-    # Handle filters.  Do any necessary type conversions, set up queries, and
-    # check permissions.
+    # Build filters and check permissions.
+    template_ids = UserTemplate.objects.filter(user=user)
+    template_ids = template_ids.values_list('template_id', flat=True)
+    app_q = Appointment.objects.all()
+    templ_q = Template.objects.filter(id__in=template_ids)
+    field_q = Field.objects.exclude(name='')
+    if not archived:
+        templ_q = templ_q.filter(archived=False)
+        field_q = field_q.filter(archived=False)
     if doctor:
         if not UserDoctor.objects.filter(user=user, doctor=doctor).exists():
             raise errors.PermissionError()
-        app_q = Appointment.objects.filter(doctor=doctor)
-    else:
-        app_q = Appointment.objects.all()
-
-    field_q = Field.objects.exclude(name='')
+        app_q = app_q.filter(doctor=doctor)
     if template:
-        if not UserTemplate.objects.filter(
-                user=user, template=template).exists():
+        if template not in template_ids:
             raise errors.PermissionError()
-        template_q = UserTemplate.objects.filter(template=template)
+        templ_q = Template.objects.filter(id=template)
         field_q = field_q.filter(template=template)
         if fields:
             field_q = field_q.filter(id__in=fields)
-    else:
-        template_q = UserTemplate.objects.filter(user=user)
     if start_date:
         app_q = app_q.filter(date__gte=start_date)
     if end_date:
@@ -120,8 +123,7 @@ def _generate_data(user, doctor=None, template=None, fields=None,
     # XXX Optimize this with SQL join?
     # XXX Super inefficient!
     # Generate rows of data.
-    for usertemplate in template_q:
-        template = usertemplate.template
+    for template in templ_q:
         fields = Field.objects.filter(template=template)
         total = 0
         for appointment in app_q:
@@ -167,6 +169,7 @@ def view_report(request):
     filters['fields'] = form.cleaned_data.get('fields')
     filters['start_date'] = form.cleaned_data.get('start_date')
     filters['end_date'] = form.cleaned_data.get('end_date')
+    filters['archived'] = form.cleaned_data.get('archived')
 
     data = _generate_data(user, **filters)
     context = {
@@ -218,7 +221,8 @@ def update(request):
             Template.objects.update_or_create(
                 id=entry['id'],
                 doctor_id=entry['doctor'],
-                name=entry['name'])
+                name=entry['name'],
+                archived=entry['archived'])
             UserTemplate.objects.get_or_create(
                 user=user, template_id=entry['id'])
         url = data['next']
@@ -231,7 +235,8 @@ def update(request):
             Field.objects.update_or_create(
                 id=entry['id'],
                 template_id=entry['clinical_note_template'],
-                name=entry['name'])
+                name=entry['name'],
+                archived=entry['archived'])
         url = data['next']
 
     # Update values.

@@ -45,6 +45,9 @@ class ReportFilter(forms.Form):
         )
         end = filter.aggregate(Max('date'))['date__max']
         start = filter.aggregate(Min('date'))['date__min']
+        # No data
+        if start is None:
+            return None, None
         return start.year, end.year
 
     def __init__(self, user, template_id=None, *args, **kwargs):
@@ -64,10 +67,14 @@ class ReportFilter(forms.Form):
             self.fields['fields'] = forms.MultipleChoiceField(
                 label='Fields', choices=self._fields, required=False)
         start, end = self._years()
-        years = [x for x in xrange(start, end + 1)]
-        self.fields['start_date'] = forms.DateField(
-            label='Start date', required=False,
-            widget=SelectDateWidget(years=years))
-        self.fields['end_date'] = forms.DateField(
-            label='End date', required=False,
-            widget=SelectDateWidget(years=years))
+        # Only add fields if there's data available.
+        if start:
+            years = [x for x in xrange(start, end + 1)]
+            self.fields['start_date'] = forms.DateField(
+                label='Start date', required=False,
+                widget=SelectDateWidget(years=years))
+            self.fields['end_date'] = forms.DateField(
+                label='End date', required=False,
+                widget=SelectDateWidget(years=years))
+        self.fields['archived'] = forms.BooleanField(
+            label='Include archived', required=False)

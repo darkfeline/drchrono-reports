@@ -68,6 +68,7 @@ class Template(models.Model):
     id = models.IntegerField(primary_key=True)
     doctor = models.ForeignKey(Doctor)
     name = models.CharField(max_length=256)
+    archived = models.BooleanField()
 
     def __unicode__(self):
         return '{}'.format(self.name)
@@ -87,6 +88,7 @@ class Field(models.Model):
     id = models.IntegerField(primary_key=True)
     template = models.ForeignKey(Template)
     name = models.CharField(max_length=256)
+    archived = models.BooleanField()
 
     def __unicode__(self):
         return '{}'.format(self.name)
