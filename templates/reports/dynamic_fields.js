@@ -9,8 +9,7 @@
 
     var template_prefix = 'template_';
     var div_prefix = 'div_template_';
-    var last = null;
-    var cached = [];
+    var cached = [];  // contains ints
 
     function load_template_handler(data, selected) {
         /* This function works with data from a JSON response, so it contains int
@@ -102,15 +101,12 @@
         });
 
         // Hide unselected forms.
-        if (last !== null) {
-            last.forEach(function(template_id){
-                if (selected.indexOf(template_id) === -1) {
-                    $('#' + template_prefix + template_id).removeAttr('name');
-                    $('#' + div_prefix + template_id).hide();
-                }
-            });
-        }
-        last = selected;
+        cached.forEach(function(template_id){
+            if (selected.indexOf(template_id.toString()) === -1) {
+                $('#' + template_prefix + template_id).removeAttr('name');
+                $('#' + div_prefix + template_id).hide();
+            }
+        });
     });
 
     /* Generate template inputs for the templates in the GET request. */
