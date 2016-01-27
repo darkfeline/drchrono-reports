@@ -19,48 +19,105 @@
     {% csrf_token %}
     {% endcomment %}
     {% bootstrap_form form %}
+    <div id="fields">
+    </div>
     {% buttons submit='Regenerate' reset='Reset' %}
     {% endbuttons %}
   </form>
 
   <script>
-   $(function(){
+   (function(){
 
+     var template_prefix = 'template_'
+     var div_prefix = 'div_template_'
      var last = null;
      var cached = [];
 
      function field_resp_handler(data) {
        /* console.dir(data); */
-       data.forEach(function(row){
-         var id = data[0];
-         var name = data[1];
-         if ($.inArray(id, cached)) {
-           cached.push(id);
-           // Load form
-         } else {
-           // unhide form
-         }
+
+       /* Make a new form input.
+        */
+
+       var template_id = data['id'];
+       var template_name = data['name']
+       var input_id = template_prefix + template_id.toString();
+       // Create new form input.
+       var input_div = $('<div/>', {
+         class: 'form-group has-success',
+         id: div_prefix + template_id,
+       });
+       var label = $('<label/>', {
+         class: 'control-label',
+         for: template_id,
+       });
+       label.append(document.createTextNode(template_name));
+       label.appendTo(input_div);
+       var select = $('<select/>', {
+         multiple: 'multiple',
+         class: 'form-control',
+         id: input_id,
+         name: input_id,
+         title: '',
+       });
+       select.appendTo(input_div);
+
+       // Add field options.
+       data['fields'].forEach(function(row){
+         var id = row[0];
+         var name = row[1];
+         var option = $('<option/>', {
+           value: id,
+         });
+         option.append(document.createTextNode(name));
+         option.appendTo(select);
        });
 
-       // Hide forms
+       input_div.appendTo('#fields');
+       cached.push(template_id);
      }
 
      $('#id_templates').change(function(e) {
+       /* On template selection change,
+
+          We load selected templates.  For new templates, we query for the
+          template's fields and make an input form.  If we already have an input
+          form for it, we show it.
+        */
+
        var selected = $(e.target).val();
 
-       // Some browsers don't support location.origin
-       if (typeof location.origin === 'undefined')
-         location.origin = location.protocol + '//' + location.host;
+       selected.forEach(function(template_id){
+         if (cached.indexOf(parseInt(template_id)) === -1) {
+           // Some browsers don't support location.origin
+           if (typeof location.origin === 'undefined') {
+             location.origin = location.protocol + '//' + location.host
+           };
 
+           $.get(location.origin +
+                 "{% url 'reports:template_fields' %}?id=" +
+                 template_id,
+                 field_resp_handler);
+         } else {
+           // Unhide form.
+           $('#' + template_prefix + template_id).attr(
+             'name', template_prefix + template_id);
+           $('#' + div_prefix + template_id).show();
+         }
+       });
 
-       selected.forEach(function(template){
-         $.get(location.origin +
-               "{% url 'reports:template_fields' %}?id=" +
-               template,
-               field_resp_handler);
-       })
+       // Hide unselected forms.
+       if (last !== null) {
+         last.forEach(function(template_id){
+           if (selected.indexOf(template_id) === -1) {
+             $('#' + template_prefix + template_id).removeAttr('name');
+             $('#' + div_prefix + template_id).hide();
+           }
+         });
+       }
+       last = selected;
      });
-   });
+   })();
   </script>
 </section>
 

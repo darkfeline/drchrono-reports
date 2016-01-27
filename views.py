@@ -185,9 +185,15 @@ def template_fields(request):
         return HttpResponseNotAllowed(['GET'])
     user = ReportsUser.objects.get(user=request.user)
 
-    templ_id = int(request.GET['id'])
-    data = Field.objects.filter(template_id=templ_id)
+    template_id = int(request.GET['id'])
+    template_name = Template.objects.get(id=template_id).name
+    data = Field.objects.filter(template_id=template_id).exclude(name='')
     data = [(field.id, field.name) for field in data]
+    data = {
+        'id': template_id,
+        'name': template_name,
+        'fields': data,
+    }
 
     return HttpResponse(json.dumps(data), 'application/json')
 
