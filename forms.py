@@ -19,22 +19,15 @@ class ReportFilter(forms.Form):
 
     def _templates(self):
         """Generate valid templates for selection."""
-        return [('', '')] + [
+        return [
             (x.template.id, x.template)
             for x in UserTemplate.objects.filter(user=self.user)]
 
     def _doctors(self):
         """Generate valid doctors for selection."""
-        return [('', '')] + [
+        return [
             (x.doctor.id, x.doctor)
             for x in UserDoctor.objects.filter(user=self.user)]
-
-    def _fields(self):
-        """Generate valid fields for selection."""
-        filter = Field.objects.filter(template_id=self.template_id)
-        return [
-            (x.id, x)
-            for x in filter.exclude(name='')]
 
     def _years(self):
         """Generate valid years for selection."""
@@ -50,7 +43,7 @@ class ReportFilter(forms.Form):
             return None, None
         return start.year, end.year
 
-    def __init__(self, user, template_id=None, *args, **kwargs):
+    def __init__(self, user, *args, **kwargs):
         """Report filtering form.
 
         user is a ReportsUser object.  template_id is a template id as an int.
@@ -58,14 +51,12 @@ class ReportFilter(forms.Form):
         """
         forms.Form.__init__(self, *args, **kwargs)
         self.user = user
-        self.template_id = template_id
-        self.fields['doctor'] = forms.ChoiceField(
-            label='Doctor', choices=self._doctors, required=False)
-        self.fields['template'] = forms.ChoiceField(
-            label='Template', choices=self._templates, required=False)
-        if self.template_id:
-            self.fields['fields'] = forms.MultipleChoiceField(
-                label='Fields', choices=self._fields, required=False)
+        self.fields['doctors'] = forms.TypedMultipleChoiceField(
+            label='Doctors', choices=self._doctors, coerce=int,
+            required=False)
+        self.fields['templates'] = forms.TypedMultipleChoiceField(
+            label='Templates', choices=self._templates, coerce=int,
+            required=False)
         start, end = self._years()
         # Only add fields if there's data available.
         if start:

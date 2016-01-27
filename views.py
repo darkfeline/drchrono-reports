@@ -77,17 +77,14 @@ def index(request):
     return render(request, 'reports/index.html', context)
 
 
-def _generate_data(user, doctor=None, template=None, fields=None,
+def _generate_data(user, doctors=None, templates=None, fields=None,
                    start_date=None, end_date=None,
                    archived=None):
     """Generate report data lazily.
 
     Takes the following filter arguments:
 
-    doctor filters by doctor id given as int.  template filters by template id
-    as int.  fields filters by a list of field ids as int.
-
-    fields must be used with template.
+    doctors, templates, and fields are lists of int ids.
 
     start_date and end_date are date objects.
 
@@ -95,26 +92,31 @@ def _generate_data(user, doctor=None, template=None, fields=None,
 
     """
 
-    # Build filters and check permissions.
+    # Build valid IDs lists.
     template_ids = UserTemplate.objects.filter(user=user)
     template_ids = template_ids.values_list('template_id', flat=True)
+    doctor_ids = UserDoctor.objects.filter(user=user)
+    doctor_ids = doctor_ids.values_list('doctor_id', flat=True)
+
+    # Build filters and check permissions.
     app_q = Appointment.objects.all()
     templ_q = Template.objects.filter(id__in=template_ids)
     field_q = Field.objects.exclude(name='')
     if not archived:
         templ_q = templ_q.filter(archived=False)
         field_q = field_q.filter(archived=False)
-    if doctor:
-        if not UserDoctor.objects.filter(user=user, doctor=doctor).exists():
+    if doctors:
+        if not all(doctor in doctor_ids for doctor in doctors):
             raise errors.PermissionError()
-        app_q = app_q.filter(doctor=doctor)
-    if template:
-        if template not in template_ids:
+        app_q = app_q.filter(doctor_id__in=doctors)
+    if templates:
+        if not all(template in template_ids for template in templates):
             raise errors.PermissionError()
-        templ_q = Template.objects.filter(id=template)
-        field_q = field_q.filter(template=template)
-        if fields:
-            field_q = field_q.filter(id__in=fields)
+        templ_q = Template.objects.filter(id__in=templates)
+        field_q = field_q.filter(template_id__in=templates)
+    if fields:
+        # XXX assert field membership
+        field_q = field_q.filter(id__in=fields)
     if start_date:
         app_q = app_q.filter(date__gte=start_date)
     if end_date:
@@ -151,21 +153,13 @@ def view_report(request):
         return HttpResponseNotAllowed(['GET'])
     user = ReportsUser.objects.get(user=request.user)
 
-    # Get some arguments arguments and convert types.
-    filters = {
-        'doctor': request.GET.get('doctor'),
-        'template': request.GET.get('template'),
-    }
-    for key, value in filters.items():
-        filters[key] = int(value) if value else None
-
-    # Create form for cleaned data.
-    template = filters['template']
-    template = Template.objects.get(id=template) if template else None
-    form = ReportFilter(user, template, request.GET)
+    # Create form for cleaning data.
+    form = ReportFilter(user, request.GET)
     form.is_valid()
 
-    filters['fields'] = [int(x) for x in request.GET.getlist('fields')]
+    filters = dict()
+    filters['doctors'] = form.cleaned_data.get('doctors')
+    filters['templates'] = form.cleaned_data.get('templates')
     filters['fields'] = form.cleaned_data.get('fields')
     filters['start_date'] = form.cleaned_data.get('start_date')
     filters['end_date'] = form.cleaned_data.get('end_date')
