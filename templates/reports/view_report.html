@@ -24,22 +24,42 @@
   </form>
 
   <script>
-   function field_resp_handler(data) {
-     console.dir(data);
-   }
+   $(function(){
 
-   $('#id_templates').change(function(e) {
+     var last = null;
      var cached = [];
-     var selected = $(e.target).val();
 
-     // Some browsers don't support location.origin
-     if (typeof location.origin === 'undefined')
-       location.origin = location.protocol + '//' + location.host;
+     function field_resp_handler(data) {
+       /* console.dir(data); */
+       data.forEach(function(row){
+         var id = data[0];
+         var name = data[1];
+         if ($.inArray(id, cached)) {
+           cached.push(id);
+           // Load form
+         } else {
+           // unhide form
+         }
+       });
 
-     selected.forEach(function(template){
-       $.get(location.origin + "{% url 'reports:template_fields' %}?id=" + template,
-             field_resp_handler);
-     })
+       // Hide forms
+     }
+
+     $('#id_templates').change(function(e) {
+       var selected = $(e.target).val();
+
+       // Some browsers don't support location.origin
+       if (typeof location.origin === 'undefined')
+         location.origin = location.protocol + '//' + location.host;
+
+
+       selected.forEach(function(template){
+         $.get(location.origin +
+               "{% url 'reports:template_fields' %}?id=" +
+               template,
+               field_resp_handler);
+       })
+     });
    });
   </script>
 </section>

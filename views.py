@@ -186,8 +186,10 @@ def template_fields(request):
     user = ReportsUser.objects.get(user=request.user)
 
     templ_id = int(request.GET['id'])
+    data = Field.objects.filter(template_id=templ_id)
+    data = [(field.id, field.name) for field in data]
 
-    return HttpResponse(json.dumps(templ_id))
+    return HttpResponse(json.dumps(data), 'application/json')
 
 
 def update(request):
