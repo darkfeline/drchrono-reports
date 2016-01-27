@@ -2,11 +2,13 @@ from __future__ import unicode_literals
 from __future__ import division
 
 import datetime
+import json
 
 from django.shortcuts import render
 from django.http import HttpResponseNotAllowed
 from django.http import HttpResponseRedirect
 from django.http import HttpResponseForbidden
+from django.http import HttpResponse
 from django.core import urlresolvers
 
 import pytz
@@ -171,6 +173,21 @@ def view_report(request):
         'form': form,
     }
     return render(request, 'reports/view_report.html', context)
+
+
+def template_fields(request):
+    """template_fields AJAX handler.
+
+    Return fields of given template.
+
+    """
+    if request.method != 'GET':
+        return HttpResponseNotAllowed(['GET'])
+    user = ReportsUser.objects.get(user=request.user)
+
+    templ_id = int(request.GET['id'])
+
+    return HttpResponse(json.dumps(templ_id))
 
 
 def update(request):

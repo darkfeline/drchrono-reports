@@ -9,7 +9,6 @@
 <h1>reports view</h1>
 
 <section>
-
   <h2>Filters</h2>
 
   <form action="{% url 'reports:view_report' %}" method="get" class="form-horizontal">
@@ -23,6 +22,26 @@
     {% buttons submit='Regenerate' reset='Reset' %}
     {% endbuttons %}
   </form>
+
+  <script>
+   function field_resp_handler(data) {
+     console.dir(data);
+   }
+
+   $('#id_templates').change(function(e) {
+     var cached = [];
+     var selected = $(e.target).val();
+
+     // Some browsers don't support location.origin
+     if (typeof location.origin === 'undefined')
+       location.origin = location.protocol + '//' + location.host;
+
+     selected.forEach(function(template){
+       $.get(location.origin + "{% url 'reports:template_fields' %}?id=" + template,
+             field_resp_handler);
+     })
+   });
+  </script>
 </section>
 
 <section>
