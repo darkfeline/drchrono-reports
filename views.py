@@ -204,6 +204,19 @@ def view_report(request):
     return render(request, 'reports/view_report.html', context)
 
 
+def dynamic_fields(request):
+    """Render dynamic_fields.js
+
+    The reason we have this here instead of as a static file is that the path
+    of AJAX calls cannot be hard-coded and need to be rendered here.
+
+    """
+    if request.method != 'GET':
+        return HttpResponseNotAllowed(['GET'])
+    return render(request, 'reports/dynamic_fields.js',
+                  content_type='application/javascript')
+
+
 def template_fields(request):
     """template_fields AJAX handler.
 
