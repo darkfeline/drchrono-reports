@@ -136,7 +136,7 @@ def _generate_data(user, doctors=None, templates=None, fields=None,
             template_used = template_used.filter(field__in=fields).exists()
             if template_used:
                 total += 1
-        for field in field_q:
+        for field in field_q.filter(template_id=template):
             count = 0
             for appointment in app_q:
                 if Value.objects.filter(field=field,
@@ -163,12 +163,13 @@ def _clean_fields(templates, request):
 
     """
 
+    print('@@@@')
     fields = list()
     for template_id in templates:
         param_id = 'template_{}'.format(template_id)
         field_ids = request.GET.getlist(param_id)
         field_ids = [int(id) for id in field_ids]
-        fields = filter(partial(_test_field, template_id), fields)
+        field_ids = filter(partial(_test_field, template_id), field_ids)
         fields.extend(field_ids)
     return fields
 
