@@ -174,6 +174,25 @@ def _clean_fields(templates, request):
     return fields
 
 
+def pre_report_archived(request, archived=False):
+    """Portal to reporting with archived.
+
+    """
+    if request.method != 'GET':
+        return HttpResponseNotAllowed(['GET'])
+    user = ReportsUser.objects.get(user=request.user)
+
+    # Create form for cleaning data.
+    form = ReportFilter(user, request.GET)
+    form.is_valid()
+
+    context = {
+        'form': ReportFilter(user, request.GET),
+        'form_target': urlresolvers.reverse('reports:view_report_archived'),
+    }
+    return render(request, 'reports/pre_report_archived.html', context)
+
+
 def view_report(request, archived=False):
     """View report.
 
