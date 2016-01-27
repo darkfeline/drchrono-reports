@@ -9,7 +9,7 @@ from django.shortcuts import render
 from django.http import HttpResponseNotAllowed
 from django.http import HttpResponseRedirect
 from django.http import HttpResponseForbidden
-from django.http import HttpResponse
+from django.http import JsonResponse
 from django.core import urlresolvers
 from django import forms
 
@@ -223,8 +223,7 @@ def template_fields(request):
         'name': template_name,
         'fields': data,
     }
-
-    return HttpResponse(json.dumps(data), 'application/json')
+    return JsonResponse(data)
 
 
 def update(request):
