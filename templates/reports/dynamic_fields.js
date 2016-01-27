@@ -57,6 +57,14 @@
         });
 
         input_div.appendTo('#fields');
+
+        // Sort field inputs.
+        $('#fields').find('div').sort(function(a, b){
+            var a_id = $(a).find('select').attr('id');
+            var b_id = $(b).find('select').attr('id');
+            return a_id.localeCompare(b_id);
+        }).appendTo('#fields');
+
         cached.push(template_id);
     }
 
