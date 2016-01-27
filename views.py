@@ -163,7 +163,6 @@ def _clean_fields(templates, request):
 
     """
 
-    print('@@@@')
     fields = list()
     for template_id in templates:
         param_id = 'template_{}'.format(template_id)
