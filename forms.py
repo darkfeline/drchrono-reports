@@ -62,8 +62,11 @@ class ReportFilter(forms.Form):
             self.fields['end_date'] = forms.DateField(
                 label='End date', required=False,
                 widget=SelectDateWidget(years=years))
-        self.fields['archived'] = forms.BooleanField(
-            label='Include archived', required=False)
+        # XXX This isn't very useful unless it can dynamically update the
+        # template and fields inputs.
+        #
+        # self.fields['archived'] = forms.BooleanField(
+        #     label='Include archived', required=False)
         self.fields['doctors'] = forms.TypedMultipleChoiceField(
             label='Doctors', choices=self._doctors, coerce=int,
             required=False)
