@@ -43,15 +43,14 @@ f<e?g[c]||(b[f+1]&&isNaN(b[f+1])?{}:[]):a,g=m;else h.isArray(d[c])?d[c].push(a):
      var last = null;
      var cached = [];
 
-     function load_template_handler(data) {
-       /* console.dir(data); */
-
-       /* Make a new form input.
-        */
-
+     function load_template_handler(data, selected) {
+       /* This function works with data from a JSON response, so it contains int
+          values in places instead of strings.  Keep all usage everywhere else
+          as strings and not ints to reduce type confusion. */
        var template_id = data['id'];
        var template_name = data['name']
        var input_id = template_prefix + template_id.toString();
+
        // Create new form input.
        var input_div = $('<div/>', {
          class: 'form-group has-success',
@@ -79,6 +78,15 @@ f<e?g[c]||(b[f+1]&&isNaN(b[f+1])?{}:[]):a,g=m;else h.isArray(d[c])?d[c].push(a):
          var option = $('<option/>', {
            value: id,
          });
+
+         console.dir(selected);
+         console.dir(id);
+         console.dir(selected.indexOf(id.toString()));
+         // Select provided options.
+         if ((typeof selected !== 'undefined') &&
+             (selected.indexOf(id.toString()) !== -1)) {
+               option.attr('selected', 'selected');
+         }
          option.append(document.createTextNode(name));
          option.appendTo(select);
        });
@@ -87,8 +95,24 @@ f<e?g[c]||(b[f+1]&&isNaN(b[f+1])?{}:[]):a,g=m;else h.isArray(d[c])?d[c].push(a):
        cached.push(template_id);
      }
 
-     /* template_id is a string */
-     function load_template(template_id) {
+     /* Load template.
+
+        Query for and add an input for the fields of the template.
+        Optionally supply a list of fields to select.
+
+        template_id is a string.
+      */
+     function load_template(template_id, selected) {
+       $.get(location.origin +
+             "{% url 'reports:template_fields' %}?id=" +
+             template_id,
+             function(data){ return load_template_handler(data, selected) });
+     }
+
+     /* Load template and select options.
+
+        template_id is a string. */
+     function load_template_selected(template_id) {
        $.get(location.origin +
              "{% url 'reports:template_fields' %}?id=" +
              template_id,
@@ -133,18 +157,22 @@ f<e?g[c]||(b[f+1]&&isNaN(b[f+1])?{}:[]):a,g=m;else h.isArray(d[c])?d[c].push(a):
        last = selected;
      });
 
-     /* Generate template inputs for the templates in the GET request */
+     /* Generate template inputs for the templates in the GET request. */
      $(document).ready(function(){
        // location.search = '?param=value&param=value...'
        var params = location.search.slice(1);
        params = $.deparam(params);
        var templates = params['templates']
-
        if (typeof templates === 'string') {
          templates = [templates];
        }
+
        templates.forEach(function(template_id){
-           load_template(template_id);
+         var fields = params[template_prefix + template_id];
+         if (typeof fields === 'string') {
+           fields = [fields];
+         }
+         load_template(template_id, fields);
        });
      });
 
