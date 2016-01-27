@@ -1,0 +1,18 @@
+{% load bootstrap3 %}
+
+<form action="{% url 'reports:view_report' %}" method="get" class="form">
+  {% comment %}
+  <!-- This gets in the way of saving queries by GET URI. -->
+  <!-- csrf vulnerability: Cross-site DoS by spamming queries. -->
+  <!-- Probably not a serious concern. -->
+  {% csrf_token %}
+  {% endcomment %}
+  {% bootstrap_form form %}
+  <div id="fields">
+  </div>
+  {% buttons submit='Generate' %}
+  {% endbuttons %}
+</form>
+
+<script src="{% url 'reports:dynamic_fields.js' %}">
+</script>
