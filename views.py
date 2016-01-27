@@ -77,6 +77,7 @@ def index(request):
         'connected': connected,
         'last_updated': last_updated_text,
         'form': ReportFilter(user),
+        'form_target': urlresolvers.reverse('reports:view_report'),
     }
     return render(request, 'reports/index.html', context)
 
@@ -173,7 +174,7 @@ def _clean_fields(templates, request):
     return fields
 
 
-def view_report(request):
+def view_report(request, archived=False):
     """View report.
 
     Parse GET parameters for filtering and generate data using filtering.
@@ -192,7 +193,7 @@ def view_report(request):
     filters['templates'] = form.cleaned_data.get('templates')
     filters['start_date'] = form.cleaned_data.get('start_date')
     filters['end_date'] = form.cleaned_data.get('end_date')
-    filters['archived'] = form.cleaned_data.get('archived')
+    filters['archived'] = archived
 
     filters['fields'] = _clean_fields(filters['templates'], request)
 
@@ -200,6 +201,9 @@ def view_report(request):
     context = {
         'data': data,
         'form': ReportFilter(user, request.GET),
+        'form_target': (urlresolvers.reverse('reports:view_report_archived')
+                        if archived else
+                        urlresolvers.reverse('reports:view_report')),
     }
     return render(request, 'reports/view_report.html', context)
 

@@ -1,6 +1,6 @@
 {% load bootstrap3 %}
 
-<form action="{% url 'reports:view_report' %}" method="get" class="form"
+<form action="{{ form_target }}" method="get" class="form"
       id="report_form">
   {% comment %}
   <!-- This gets in the way of saving queries by GET URI. -->

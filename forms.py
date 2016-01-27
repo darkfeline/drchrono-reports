@@ -65,6 +65,9 @@ class ReportFilter(forms.Form):
         # XXX This isn't very useful unless it can dynamically update the
         # template and fields inputs.
         #
+        # If this is needed, easiest way is to create a separate report
+        # endpoint.  I think.
+        #
         # self.fields['archived'] = forms.BooleanField(
         #     label='Include archived', required=False)
         self.fields['doctors'] = forms.TypedMultipleChoiceField(
