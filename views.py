@@ -3,6 +3,7 @@ from __future__ import division
 
 import datetime
 import json
+from functools import partial
 
 from django.shortcuts import render
 from django.http import HttpResponseNotAllowed
@@ -10,6 +11,7 @@ from django.http import HttpResponseRedirect
 from django.http import HttpResponseForbidden
 from django.http import HttpResponse
 from django.core import urlresolvers
+from django import forms
 
 import pytz
 import requests
@@ -117,7 +119,6 @@ def _generate_data(user, doctors=None, templates=None, fields=None,
         templ_q = Template.objects.filter(id__in=templates)
         field_q = field_q.filter(template_id__in=templates)
     if fields:
-        # XXX assert field membership
         field_q = field_q.filter(id__in=fields)
     if start_date:
         app_q = app_q.filter(date__gte=start_date)
@@ -145,6 +146,33 @@ def _generate_data(user, doctors=None, templates=None, fields=None,
                    '{:.1%}'.format(count / total) if total else 'N/A')
 
 
+def _test_field(template_id, field_id):
+    """Test field validity.
+
+    Test if field is a valid field of given template.
+
+    """
+    return Field.objects.filter(id=field_id,
+                                template_id=template_id).exists()
+
+
+def _clean_fields(templates, request):
+    """Clean field parameters.
+
+    Return a cleaned list of fields.
+
+    """
+
+    fields = list()
+    for template_id in templates:
+        param_id = 'template_{}'.format(template_id)
+        field_ids = request.GET.getlist(param_id)
+        field_ids = [int(id) for id in field_ids]
+        fields = filter(partial(_test_field, template_id), fields)
+        fields.extend(field_ids)
+    return fields
+
+
 def view_report(request):
     """View report.
 
@@ -162,15 +190,16 @@ def view_report(request):
     filters = dict()
     filters['doctors'] = form.cleaned_data.get('doctors')
     filters['templates'] = form.cleaned_data.get('templates')
-    filters['fields'] = form.cleaned_data.get('fields')
     filters['start_date'] = form.cleaned_data.get('start_date')
     filters['end_date'] = form.cleaned_data.get('end_date')
     filters['archived'] = form.cleaned_data.get('archived')
 
+    filters['fields'] = _clean_fields(filters['templates'], request)
+
     data = _generate_data(user, **filters)
     context = {
         'data': data,
-        'form': form,
+        'form': ReportFilter(user, request.GET),
     }
     return render(request, 'reports/view_report.html', context)
 

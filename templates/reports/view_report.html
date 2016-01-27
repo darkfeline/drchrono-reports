@@ -26,6 +26,16 @@
   </form>
 
   <script>
+
+
+   /* JQuery deparam function
+
+      https://github.com/chrissrogers/jquery-deparam/blob/master/jquery-deparam.min.js
+    */
+   (function(h){h.deparam=function(i,j){var d={},k={"true":!0,"false":!1,"null":null};h.each(i.replace(/\+/g," ").split("&"),function(i,l){var m;var a=l.split("="),c=decodeURIComponent(a[0]),g=d,f=0,b=c.split("]["),e=b.length-1;/\[/.test(b[0])&&/\]$/.test(b[e])?(b[e]=b[e].replace(/\]$/,""),b=b.shift().split("[").concat(b),e=b.length-1):e=0;if(2===a.length)if(a=decodeURIComponent(a[1]),j&&(a=a&&!isNaN(a)?+a:"undefined"===a?void 0:void 0!==k[a]?k[a]:a),e)for(;f<=e;f++)c=""===b[f]?g.length:b[f],m=g[c]=
+f<e?g[c]||(b[f+1]&&isNaN(b[f+1])?{}:[]):a,g=m;else h.isArray(d[c])?d[c].push(a):d[c]=void 0!==d[c]?[d[c],a]:a;else c&&(d[c]=j?void 0:"")});return d}})(jQuery);
+
+
    (function(){
 
      var template_prefix = 'template_'
@@ -33,7 +43,7 @@
      var last = null;
      var cached = [];
 
-     function field_resp_handler(data) {
+     function load_template_handler(data) {
        /* console.dir(data); */
 
        /* Make a new form input.
@@ -77,6 +87,14 @@
        cached.push(template_id);
      }
 
+     /* template_id is a string */
+     function load_template(template_id) {
+       $.get(location.origin +
+             "{% url 'reports:template_fields' %}?id=" +
+             template_id,
+             load_template_handler);
+     }
+
      $('#id_templates').change(function(e) {
        /* On template selection change,
 
@@ -94,10 +112,7 @@
              location.origin = location.protocol + '//' + location.host
            };
 
-           $.get(location.origin +
-                 "{% url 'reports:template_fields' %}?id=" +
-                 template_id,
-                 field_resp_handler);
+           load_template(template_id);
          } else {
            // Unhide form.
            $('#' + template_prefix + template_id).attr(
@@ -117,6 +132,22 @@
        }
        last = selected;
      });
+
+     /* Generate template inputs for the templates in the GET request */
+     $(document).ready(function(){
+       // location.search = '?param=value&param=value...'
+       var params = location.search.slice(1);
+       params = $.deparam(params);
+       var templates = params['templates']
+
+       if (typeof templates === 'string') {
+         templates = [templates];
+       }
+       templates.forEach(function(template_id){
+           load_template(template_id);
+       });
+     });
+
    })();
   </script>
 </section>
