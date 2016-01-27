@@ -87,7 +87,7 @@
               function(data){ return load_template_handler(data, selected); });
     }
 
-    $('#id_templates').change(function(e) {
+    function reload_template_fields(e) {
         /* On template selection change,
 
          We load selected templates.  For new templates, we query for the
@@ -115,7 +115,9 @@
                 $('#' + div_prefix + template_id).hide();
             }
         });
-    });
+    }
+
+    $('#id_templates').change(reload_template_fields);
 
     /* Generate template inputs for the templates in the GET request. */
     $(document).ready(function(){
