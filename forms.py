@@ -51,12 +51,7 @@ class ReportFilter(forms.Form):
         """
         forms.Form.__init__(self, *args, **kwargs)
         self.user = user
-        self.fields['doctors'] = forms.TypedMultipleChoiceField(
-            label='Doctors', choices=self._doctors, coerce=int,
-            required=False)
-        self.fields['templates'] = forms.TypedMultipleChoiceField(
-            label='Templates', choices=self._templates, coerce=int,
-            required=False)
+
         start, end = self._years()
         # Only add fields if there's data available.
         if start:
@@ -69,3 +64,9 @@ class ReportFilter(forms.Form):
                 widget=SelectDateWidget(years=years))
         self.fields['archived'] = forms.BooleanField(
             label='Include archived', required=False)
+        self.fields['doctors'] = forms.TypedMultipleChoiceField(
+            label='Doctors', choices=self._doctors, coerce=int,
+            required=False)
+        self.fields['templates'] = forms.TypedMultipleChoiceField(
+            label='Templates', choices=self._templates, coerce=int,
+            required=False)
