@@ -22,7 +22,9 @@
     {% csrf_token %}
     {% endcomment %}
     {% bootstrap_form form %}
-    {% buttons submit='Generate' %}
+    <div id="fields">
+    </div>
+    {% buttons submit='Generate' reset='Reset' %}
     {% endbuttons %}
   </form>
 
