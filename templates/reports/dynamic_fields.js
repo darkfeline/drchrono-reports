@@ -87,18 +87,20 @@
               function(data){ return load_template_handler(data, selected); });
     }
 
-    function reload_template_fields(e) {
+    function reload_template_fields() {
         /* On template selection change,
 
          We load selected templates.  For new templates, we query for the
          template's fields and make an input form.  If we already have an input
          form for it, we show it.
+
          */
 
-        var selected = $(e.target).val();
+        var selected = $('#id_templates').val();
 
         selected.forEach(function(template_id){
             if (cached.indexOf(parseInt(template_id)) === -1) {
+                // Load new form.
                 load_template(template_id);
             } else {
                 // Unhide form.
@@ -117,7 +119,18 @@
         });
     }
 
-    $('#id_templates').change(reload_template_fields);
+    $('#id_templates').change(function(e){
+        reload_template_fields();
+    });
+
+    // Also on form reset.
+    $('#report_form').on('reset', function(e){
+        // Putting this in setTimeout makes sure it fires after the reset event.
+        // At least depending on JS event stack implementation.
+        setTimeout(function() {
+            reload_template_fields();
+        });
+    });
 
     /* Generate template inputs for the templates in the GET request. */
     $(document).ready(function(){

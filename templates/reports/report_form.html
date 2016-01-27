@@ -1,6 +1,7 @@
 {% load bootstrap3 %}
 
-<form action="{% url 'reports:view_report' %}" method="get" class="form">
+<form action="{% url 'reports:view_report' %}" method="get" class="form"
+      id="report_form">
   {% comment %}
   <!-- This gets in the way of saving queries by GET URI. -->
   <!-- csrf vulnerability: Cross-site DoS by spamming queries. -->
@@ -10,7 +11,7 @@
   {% bootstrap_form form %}
   <div id="fields">
   </div>
-  {% buttons submit='Generate' %}
+  {% buttons submit='Generate' reset='Reset' %}
   {% endbuttons %}
 </form>
 
