@@ -26,7 +26,7 @@
         });
         var label = $('<label/>', {
             class: 'control-label',
-            for: template_id
+            for: input_id
         });
         label.append(document.createTextNode(template_name));
         label.appendTo(input_div);
