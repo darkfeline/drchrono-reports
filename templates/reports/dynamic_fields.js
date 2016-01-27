@@ -21,7 +21,7 @@
 
         // Create new form input.
         var input_div = $('<div/>', {
-            class: 'form-group has-success',
+            class: 'form-group',
             id: div_prefix + template_id
         });
         var label = $('<label/>', {
