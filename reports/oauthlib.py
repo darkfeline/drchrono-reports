@@ -1,6 +1,17 @@
 import urllib
+import json
+
+from django.conf import settings
 
 ROOT = 'https://drchrono.com/'
+
+
+def get_secrets():
+    """Load OAuth secrets and configuration."""
+    with open(settings.DRCHRONO_REPORTS_SECRETS) as file:
+        secrets = json.load(file)
+    secrets['scope'] = 'patients user calendar'
+    return secrets
 
 
 def url(path):

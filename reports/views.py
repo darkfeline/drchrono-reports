@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 from __future__ import division
 
 import datetime
-import json
 from functools import partial
 
 from django.shortcuts import render
@@ -37,15 +36,6 @@ class HttpResponseSeeOther(HttpResponseRedirect):
 
 class HttpResponseTemporaryRedirect(HttpResponseRedirect):
     status_code = 307
-
-
-def _get_oauth_values():
-    return {
-        'client_id': 'GcFaMT8rcTQW1VWIMPWiKwt5T1APHP2u0mmQleyP',
-        'client_secret': 'X368VErNf1dVG2LSrI5zCbATokpvTzg8V2gULhylt8PZrpE7su9hsmOiIiHQgQsG8MeHzK1t1i60fkVKRBv83wP6tgA39ALpPyAk1TV2LwLYcWYvcPBg1iyog4D7ta7f',
-        'scope': 'patients user calendar',
-        'redirect_uri': 'http://localhost:8001/reports/auth_return/',
-    }
 
 
 def index(request):
@@ -355,7 +345,7 @@ def oauth(request):
     """Initiate OAuth."""
     if request.method != 'GET':
         return HttpResponseNotAllowed(['GET'])
-    vals = _get_oauth_values()
+    vals = oauthlib.get_secrets()
     auth_uri = oauthlib.make_redirect(vals['redirect_uri'],
                                       vals['client_id'],
                                       vals['scope'])
@@ -370,7 +360,7 @@ def auth_return(request):
     if 'error' in request.GET:
         return HttpResponseForbidden
 
-    vals = _get_oauth_values()
+    vals = oauthlib.get_secrets()
 
     response = requests.post(oauthlib.TOKEN_URL, data={
         'code': request.GET['code'],
