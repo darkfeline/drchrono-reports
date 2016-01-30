@@ -376,8 +376,8 @@ def auth_return(request):
 
     access_token = data['access_token']
     refresh_token = data['refresh_token']
-    expires_timestamp = datetime.datetime.now(pytz.utc) + \
-                        datetime.timedelta(seconds=data['expires_in'])
+    expires_timestamp = (datetime.datetime.now(pytz.utc) +
+                         datetime.timedelta(seconds=data['expires_in']))
 
     user = ReportsUser.objects.get(user=request.user)
     user.access_token = access_token
