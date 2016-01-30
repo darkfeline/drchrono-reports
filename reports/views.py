@@ -10,7 +10,6 @@ from django.http import HttpResponseRedirect
 from django.http import HttpResponseForbidden
 from django.http import JsonResponse
 from django.core import urlresolvers
-from django import forms
 
 import pytz
 import requests
