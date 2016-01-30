@@ -240,6 +240,9 @@ def template_fields(request):
     user = ReportsUser.objects.get(user=request.user)
 
     template_id = int(request.GET['id'])
+    if not UserTemplate.objects.filter(
+            user=user, template_id=template_id).exists():
+        raise PermissionError()
     template_name = Template.objects.get(id=template_id).name
     data = Field.objects.filter(template_id=template_id).exclude(name='')
     data = [(field.id, field.name) for field in data]
