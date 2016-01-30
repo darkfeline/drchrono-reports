@@ -1,7 +1,6 @@
 import urllib
 
-# ROOT = 'https://drchrono.com/'
-ROOT = 'http://drchrono.dev/'
+ROOT = 'https://drchrono.com/'
 
 
 def url(path):
